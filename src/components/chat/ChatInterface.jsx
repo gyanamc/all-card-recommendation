@@ -26,16 +26,39 @@ const ChatInterface = () => {
         setMessages(prev => [...prev, userMsg]);
         setIsLoading(true);
 
-        // Simulate Network Delay and AI Response
-        setTimeout(() => {
+        try {
+            const response = await fetch("https://primary-production-da3f.up.railway.app/webhook/gyanam.store", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: text }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+
             const aiMsg = {
                 role: 'ai',
-                content: MOCK_RESPONSE.html, // In real app, this comes from backend fetch
+                content: data.html || "<p>Sorry, I couldn't get a proper response at this time.</p>",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
             setMessages(prev => [...prev, aiMsg]);
+
+        } catch (error) {
+            console.error("Error fetching AI response:", error);
+            const errorMsg = {
+                role: 'ai',
+                content: "<p><em>Sorry, I'm having trouble connecting to the server right now. Please try again later.</em></p>",
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     return (
